@@ -3,6 +3,8 @@ from datetime import date, datetime, timedelta
 import pandas as pd
 from typing import Tuple
 from firebase_helpers import load_user_deliveries
+from config import TARGET_DAILY
+
 
 def display_metrics(username: str, today: date) -> Tuple[float, float]:
     """Display key metrics and return earned amount and goal."""

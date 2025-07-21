@@ -3,19 +3,23 @@ from firebase_admin import credentials, firestore
 import streamlit as st
 from datetime import datetime, date
 from typing import Dict, Optional, List, Any
-import pytz
+import pandas as pd
 from config import tz
 
-# Initialize Firebase only once
+st.write("Checking Firebase initialization...")
+
 if not firebase_admin._apps:
     try:
+        st.write(f"Firebase secrets keys: {list(st.secrets['firebase'].keys())}")
         cred = credentials.Certificate(dict(st.secrets["firebase"]))
         firebase_admin.initialize_app(cred)
+        st.write("Firebase initialized successfully.")
     except Exception as e:
         st.error(f"Failed to initialize Firebase: {e}")
         st.stop()
 
 db = firestore.client()
+st.write("Firestore client created.")
 
 def get_current_date() -> date:
     return datetime.now(tz).date()
@@ -23,7 +27,10 @@ def get_current_date() -> date:
 def get_user(username: str) -> Optional[Dict[str, Any]]:
     try:
         doc = db.collection("users").document(username).get()
-        return doc.to_dict() if doc.exists else None
+        if doc.exists:
+            return doc.to_dict()
+        st.warning(f"User '{username}' not found.")
+        return None
     except Exception as e:
         st.error(f"Error accessing user data: {e}")
         return None

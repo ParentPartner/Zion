@@ -1,4 +1,4 @@
-import streamlit as st  # needed for st.error(), UI elements
+import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.express as px
@@ -10,7 +10,7 @@ from config import PERFORMANCE_LEVELS
 
 
 def calculate_performance_metrics(df: pd.DataFrame) -> Dict[str, Any]:
-    """Calculate various performance metrics from delivery data."""
+    """Calculate performance metrics from delivery data."""
     metrics = {
         "total_orders": 0,
         "total_earnings": 0.0,
@@ -39,11 +39,10 @@ def calculate_performance_metrics(df: pd.DataFrame) -> Dict[str, Any]:
         if "order_type" in df.columns:
             metrics["type_distribution"] = df["order_type"].value_counts(normalize=True).to_dict()
         
-        if "epm" in metrics and "eph" in metrics:
-            for level, criteria in PERFORMANCE_LEVELS.items():
-                if metrics["epm"] >= criteria["min_epm"] and metrics["eph"] >= criteria["min_eph"]:
-                    metrics["performance"] = level
-                    break
+        for level, criteria in PERFORMANCE_LEVELS.items():
+            if metrics["epm"] >= criteria.get("min_epm", 0) and metrics["eph"] >= criteria.get("min_eph", 0):
+                metrics["performance"] = level
+                break
         
         return metrics
     
@@ -53,12 +52,11 @@ def calculate_performance_metrics(df: pd.DataFrame) -> Dict[str, Any]:
 
 
 def predict_earnings(df: pd.DataFrame, target_date: date) -> Optional[float]:
-    """Predict earnings for a target date using machine learning."""
+    """Predict earnings for a target date using RandomForest with fallback."""
     if df.empty or "date" not in df.columns:
         return None
     
     try:
-        # Prepare data
         df_daily = df.groupby("date")["order_total"].sum().reset_index()
         df_daily["date_ordinal"] = df_daily["date"].apply(lambda d: d.toordinal())
         df_daily["day_of_week"] = df_daily["date"].apply(lambda d: d.weekday())
@@ -66,19 +64,15 @@ def predict_earnings(df: pd.DataFrame, target_date: date) -> Optional[float]:
         if len(df_daily) < 5:
             return None
         
-        # Feature engineering
         X = df_daily[["date_ordinal", "day_of_week"]]
         y = df_daily["order_total"]
         
-        # Try more sophisticated model
         try:
             model = RandomForestRegressor(n_estimators=100, random_state=42)
             model.fit(X, y)
-        except:
-            # Fall back to linear regression if RF fails
+        except Exception:
             model = LinearRegression().fit(X, y)
         
-        # Make prediction
         target_ordinal = target_date.toordinal()
         target_dow = target_date.weekday()
         prediction = model.predict(np.array([[target_ordinal, target_dow]]))[0]
@@ -91,7 +85,7 @@ def predict_earnings(df: pd.DataFrame, target_date: date) -> Optional[float]:
 
 
 def display_analytics(username: str, df: pd.DataFrame) -> None:
-    """Streamlit UI to display analytics for the given user and data."""
+    """Display detailed analytics for the given user data."""
     st.header("📊 Performance Analytics")
     
     if df.empty:
@@ -113,24 +107,18 @@ def display_analytics(username: str, df: pd.DataFrame) -> None:
     
     if metrics["type_distribution"]:
         st.subheader("Order Type Distribution")
-        order_types = list(metrics["type_distribution"].keys())
-        proportions = list(metrics["type_distribution"].values())
         fig = px.pie(
-            names=order_types,
-            values=proportions,
+            names=list(metrics["type_distribution"].keys()),
+            values=list(metrics["type_distribution"].values()),
             title="Order Types"
         )
         st.plotly_chart(fig)
     
-    # Show earnings prediction for today and next 7 days
-    st.subheader("Earnings Prediction")
+    st.subheader("Earnings Prediction (Next 7 Days)")
     today = date.today()
-    predictions = []
     dates = [today + pd.Timedelta(days=i) for i in range(8)]
-    for d in dates:
-        pred = predict_earnings(df, d)
-        predictions.append(pred if pred is not None else 0)
-    
+    predictions = [predict_earnings(df, d) or 0 for d in dates]
+
     pred_df = pd.DataFrame({
         "Date": dates,
         "Predicted Earnings": predictions

@@ -9,6 +9,8 @@ from ui.tip_baiters import tip_baiter_tracker
 from ui.analytics import display_analytics
 from ui.settings import delete_entries_section
 from firebase_helpers import get_current_date, get_user
+from typing import Dict, Any
+
 
 # Initialize session state
 if "logged_in" not in st.session_state:

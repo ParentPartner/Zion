@@ -1,15 +1,14 @@
 import streamlit as st
-from firebase_helpers import load_user_deliveries, db
+import pandas as pd
 from datetime import date
-from firebase_helpers import get_current_date
-
+from firebase_helpers import load_user_deliveries, db, get_current_date
 
 def delete_entries_section(username: str) -> None:
     """Display interface for deleting entries."""
     st.subheader("🗑️ Delete Entries")
     selected_date = st.date_input("Select date to manage entries", 
-                                value=get_current_date(), 
-                                key="delete_date")
+                                  value=get_current_date(), 
+                                  key="delete_date")
     
     df_all = load_user_deliveries(username)
     if not df_all.empty and "timestamp" in df_all.columns:

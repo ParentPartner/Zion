@@ -1,13 +1,12 @@
 import streamlit as st
 import pandas as pd
 from datetime import date, datetime, timedelta
-from firebase_helpers import add_tip_baiter_to_firestore, load_user_tip_baiters, db, get_current_date
+from firebase_helpers import add_tip_baiter_to_firestore, load_user_tip_baiters, get_current_date
+from config import tz
 
 def tip_baiter_tracker(username: str) -> None:
-    """Display and manage tip baiter tracking functionality."""
     st.subheader("🚨 Tip Baiter Tracker")
     
-    # Add new tip baiter
     with st.expander("➕ Add New Tip Baiter", expanded=False):
         with st.form("tip_baiter_form"):
             col1, col2 = st.columns(2)
@@ -43,16 +42,14 @@ def tip_baiter_tracker(username: str) -> None:
                     }
                     add_tip_baiter_to_firestore(entry)
                     st.success("Tip baiter saved!")
-                    st.rerun()
+                    st.experimental_rerun()
     
-    # Display and manage existing tip baiters
     st.subheader("📋 Your Tip Baiters")
     tip_baiters_df = load_user_tip_baiters(username)
     
     if not tip_baiters_df.empty:
         tip_baiters_df["date"] = pd.to_datetime(tip_baiters_df["date"])
         
-        # Summary statistics
         col1, col2, col3 = st.columns(3)
         with col1:
             st.metric("Total Tip Baiters", len(tip_baiters_df))
@@ -62,7 +59,6 @@ def tip_baiter_tracker(username: str) -> None:
             avg_severity = tip_baiters_df['rating'].mean()
             st.metric("Average Severity", f"{avg_severity:.1f}/5")
         
-        # Enhanced filtering
         with st.expander("🔍 Filter Options", expanded=False):
             col1, col2, col3 = st.columns(3)
             with col1:
@@ -75,7 +71,6 @@ def tip_baiter_tracker(username: str) -> None:
             with col3:
                 min_severity = st.slider("Minimum Severity", 1, 5, 1)
         
-        # Apply filters
         if search_term:
             tip_baiters_df = tip_baiters_df[
                 tip_baiters_df["name"].str.contains(search_term, case=False) |
@@ -94,14 +89,10 @@ def tip_baiter_tracker(username: str) -> None:
                 cutoff_date = today - timedelta(days=days)
                 tip_baiters_df = tip_baiters_df[tip_baiters_df["date"].dt.date >= cutoff_date]
         
-        # Apply severity filter
         tip_baiters_df = tip_baiters_df[tip_baiters_df["rating"] >= min_severity]
         
-        # Display in a more organized way
         if not tip_baiters_df.empty:
             tip_baiters_df = tip_baiters_df.sort_values(["date", "rating"], ascending=[False, False])
-            
-            # Group by date for better organization
             grouped = tip_baiters_df.groupby(tip_baiters_df["date"].dt.date)
             
             for date_val, group in grouped:
@@ -116,9 +107,10 @@ def tip_baiter_tracker(username: str) -> None:
                                     st.markdown(f"📝 *{row['notes']}*")
                             with col2:
                                 if st.button("🗑️", key=f"del_tb_{row['id']}"):
+                                    db = get_db()
                                     db.collection("tip_baiters").document(row["id"]).delete()
                                     st.success("Tip baiter removed!")
-                                    st.rerun()
+                                    st.experimental_rerun()
                             st.divider()
         else:
             st.info("No tip baiters match your filters")

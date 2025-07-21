@@ -1,4 +1,5 @@
 import streamlit as st
+from typing import Optional
 from firebase_helpers import init_user, validate_login
 
 def login_section() -> Optional[str]:

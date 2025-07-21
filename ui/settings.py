@@ -34,12 +34,11 @@ def delete_entries_section(username: str) -> None:
                         st.caption(f"✨ ${row['bonus_amount']:.2f} in bonuses")
                 with col2:
                     if st.button("Delete", key=f"del_{row.name}"):
-                        # ✅ FIXED: Use keyword arguments with Firestore filters
-                        docs = db.collection("deliveries")\
-                                 .where(filter=("username", "==", username))\
-                                 .where(filter=("timestamp", "==", row["timestamp"].isoformat()))\
-                                 .where(filter=("order_total", "==", row["order_total"]))\
-                                 .limit(1).stream()
+                        # Find the exact document to delete
+                        docs = db.collection("deliveries").where("username", "==", username)\
+                                                         .where("timestamp", "==", row["timestamp"].isoformat())\
+                                                         .where("order_total", "==", row["order_total"])\
+                                                         .limit(1).stream()
                         
                         for doc in docs:
                             db.collection("deliveries").document(doc.id).delete()

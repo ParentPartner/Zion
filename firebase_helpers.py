@@ -87,10 +87,34 @@ def load_user_deliveries(username: str) -> pd.DataFrame:
     try:
         docs = db.collection("deliveries").where("username", "==", username).stream()
         data = [doc.to_dict() for doc in docs]
-        return pd.DataFrame(data) if data else pd.DataFrame()
+        if not data:
+            return pd.DataFrame()
+        
+        df = pd.DataFrame(data)
+        
+        # Convert 'timestamp' string to datetime (with timezone awareness)
+        df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
+        df = df.dropna(subset=["timestamp"])  # drop invalid timestamps
+        
+        # Add 'date' column extracted from 'timestamp' for grouping and filtering
+        df["date"] = df["timestamp"].dt.date
+        
+        # Ensure numeric columns are properly typed
+        df["order_total"] = pd.to_numeric(df["order_total"], errors="coerce")
+        if "miles" in df.columns:
+            df["miles"] = pd.to_numeric(df["miles"], errors="coerce")
+        else:
+            df["miles"] = 0.0
+        
+        # Drop rows where critical numeric data is missing
+        df = df.dropna(subset=["order_total"])
+        
+        return df.reset_index(drop=True)
+    
     except Exception as e:
         st.error(f"❌ Error loading deliveries: {e}")
         return pd.DataFrame()
+
 
 def add_tip_baiter_to_firestore(entry: Dict[str, Any]) -> None:
     try:

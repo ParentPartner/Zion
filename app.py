@@ -3,7 +3,7 @@ from datetime import date
 from ui.login import login_section
 from ui.checkin import daily_checkin
 from ui.delivery_form import delivery_entry_form
-from ui.metrics import display_metrics
+from ui.metrics import display_metrics, display_ai_insights
 from ui.incentives import manage_incentives
 from ui.tip_baiters import tip_baiter_tracker
 from ui.analytics import display_analytics

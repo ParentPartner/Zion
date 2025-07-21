@@ -23,7 +23,6 @@ def get_current_date() -> date:
 
 def get_user(username: str) -> Optional[Dict[str, Any]]:
     try:
-        db = get_db()
         doc = db.collection("users").document(username).get()
         if doc.exists:
             return doc.to_dict()
@@ -41,7 +40,6 @@ def validate_login(username: str, password: str) -> bool:
 
 def update_user_data(username: str, data: Dict[str, Any]) -> None:
     try:
-        db = get_db()
         db.collection("users").document(username).update(data)
     except Exception as e:
         st.error(f"Error updating user data: {e}")
@@ -49,7 +47,6 @@ def update_user_data(username: str, data: Dict[str, Any]) -> None:
 def init_user(username: str, password: str = "password") -> None:
     if not get_user(username):
         try:
-            db = get_db()
             db.collection("users").document(username).set({
                 "password": password,
                 "last_checkin_date": "",
@@ -65,7 +62,6 @@ def init_user(username: str, password: str = "password") -> None:
 
 def add_entry_to_firestore(entry: Dict[str, Any]) -> None:
     try:
-        db = get_db()
         entry["created_at"] = datetime.now(tz).isoformat()
         db.collection("deliveries").add(entry)
     except Exception as e:
@@ -73,7 +69,6 @@ def add_entry_to_firestore(entry: Dict[str, Any]) -> None:
 
 def load_user_deliveries(username: str) -> pd.DataFrame:
     try:
-        db = get_db()
         docs = db.collection("deliveries").where("username", "==", username).stream()
         data = [doc.to_dict() for doc in docs]
         return pd.DataFrame(data) if data else pd.DataFrame()
@@ -83,7 +78,6 @@ def load_user_deliveries(username: str) -> pd.DataFrame:
 
 def add_tip_baiter_to_firestore(entry: Dict[str, Any]) -> None:
     try:
-        db = get_db()
         entry["created_at"] = datetime.now(tz).isoformat()
         db.collection("tip_baiters").add(entry)
     except Exception as e:
@@ -91,7 +85,6 @@ def add_tip_baiter_to_firestore(entry: Dict[str, Any]) -> None:
 
 def load_user_tip_baiters(username: str) -> pd.DataFrame:
     try:
-        db = get_db()
         docs = db.collection("tip_baiters").where("username", "==", username).stream()
         data = []
         for doc in docs:
@@ -105,7 +98,10 @@ def load_user_tip_baiters(username: str) -> pd.DataFrame:
 
 def save_incentives(username: str, incentives: List[Dict[str, Any]]) -> None:
     try:
-        db = get_db()
         db.collection("users").document(username).update({"incentives": incentives})
     except Exception as e:
         st.error(f"Error saving incentives: {e}")
+
+
+# ✅ Fix: Define global db so it can be imported elsewhere
+db = get_db()

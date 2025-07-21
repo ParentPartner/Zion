@@ -33,7 +33,6 @@ def get_user(username: str) -> Optional[Dict[str, Any]]:
         doc = db.collection("users").document(username).get()
         if doc.exists:
             user_data = doc.to_dict()
-            st.write(f"🔍 [DEBUG] Found user '{username}': {user_data}")
             return user_data
         st.warning(f"⚠️ User '{username}' not found.")
         return None

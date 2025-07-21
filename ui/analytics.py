@@ -1,4 +1,4 @@
-import streamlit as st  # needed for st.error()
+import streamlit as st  # needed for st.error(), UI elements
 import pandas as pd
 import numpy as np
 import plotly.express as px
@@ -51,6 +51,7 @@ def calculate_performance_metrics(df: pd.DataFrame) -> Dict[str, Any]:
         st.error(f"Error calculating metrics: {e}")
         return metrics
 
+
 def predict_earnings(df: pd.DataFrame, target_date: date) -> Optional[float]:
     """Predict earnings for a target date using machine learning."""
     if df.empty or "date" not in df.columns:
@@ -87,3 +88,53 @@ def predict_earnings(df: pd.DataFrame, target_date: date) -> Optional[float]:
     except Exception as e:
         st.error(f"Prediction error: {e}")
         return None
+
+
+def display_analytics(username: str, df: pd.DataFrame) -> None:
+    """Streamlit UI to display analytics for the given user and data."""
+    st.header("📊 Performance Analytics")
+    
+    if df.empty:
+        st.info("No delivery data available to analyze.")
+        return
+    
+    metrics = calculate_performance_metrics(df)
+    
+    st.subheader("Summary Metrics")
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Total Orders", metrics["total_orders"])
+    col2.metric("Total Earnings", f"${metrics['total_earnings']:.2f}")
+    col3.metric("Performance Level", metrics["performance"])
+    
+    st.subheader("Earnings Efficiency")
+    col1, col2 = st.columns(2)
+    col1.metric("Earnings per Mile (EPM)", f"${metrics['epm']:.2f}")
+    col2.metric("Earnings per Hour (EPH)", f"${metrics['eph']:.2f}")
+    
+    if metrics["type_distribution"]:
+        st.subheader("Order Type Distribution")
+        order_types = list(metrics["type_distribution"].keys())
+        proportions = list(metrics["type_distribution"].values())
+        fig = px.pie(
+            names=order_types,
+            values=proportions,
+            title="Order Types"
+        )
+        st.plotly_chart(fig)
+    
+    # Show earnings prediction for today and next 7 days
+    st.subheader("Earnings Prediction")
+    today = date.today()
+    predictions = []
+    dates = [today + pd.Timedelta(days=i) for i in range(8)]
+    for d in dates:
+        pred = predict_earnings(df, d)
+        predictions.append(pred if pred is not None else 0)
+    
+    pred_df = pd.DataFrame({
+        "Date": dates,
+        "Predicted Earnings": predictions
+    })
+    
+    fig2 = px.line(pred_df, x="Date", y="Predicted Earnings", title="Predicted Earnings Over Next 7 Days")
+    st.plotly_chart(fig2)

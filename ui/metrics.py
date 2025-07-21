@@ -1,9 +1,11 @@
 import streamlit as st
 from datetime import date, datetime, timedelta
 import pandas as pd
-from typing import Tuple
+from typing import Tuple, Optional
 from firebase_helpers import load_user_deliveries
 from config import TARGET_DAILY
+from sklearn.linear_model import LinearRegression
+import numpy as np
 
 
 def display_metrics(username: str, today: date) -> Tuple[float, float]:
@@ -68,3 +70,69 @@ def display_metrics(username: str, today: date) -> Tuple[float, float]:
                      "good" if epm >= 2.5 else "normal" if epm >= 1.5 else "bad")
     
     return earned, goal
+
+
+def predict_earnings(df: pd.DataFrame, target_date: date) -> Optional[float]:
+    """Predict earnings for target_date using linear regression on past data."""
+    if df.empty or "date" not in df.columns or "order_total" not in df.columns:
+        return None
+
+    try:
+        # Aggregate earnings by date
+        df_daily = df.groupby("date")["order_total"].sum().reset_index()
+        df_daily["date_ordinal"] = df_daily["date"].apply(lambda d: d.toordinal())
+
+        # Prepare features and target
+        X = df_daily[["date_ordinal"]]
+        y = df_daily["order_total"]
+
+        # Fit linear regression
+        model = LinearRegression()
+        model.fit(X, y)
+
+        # Predict for the target date
+        pred = model.predict(np.array([[target_date.toordinal()]]))[0]
+        return max(pred, 0)  # No negative predictions
+    except Exception as e:
+        st.error(f"Prediction error: {e}")
+        return None
+
+
+def display_ai_insights(username: str, today: date) -> None:
+    st.header("🤖 AI Insights")
+
+    df = load_user_deliveries(username)
+
+    if df.empty:
+        st.info("No delivery data to analyze AI insights.")
+        return
+
+    # Make sure timestamp is datetime and create date column
+    if "timestamp" in df.columns:
+        df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
+        df = df.dropna(subset=["timestamp"])
+        df["date"] = df["timestamp"].dt.date
+    else:
+        st.warning("Data missing timestamps for analysis.")
+        return
+
+    # Predict earnings for today and next 3 days
+    st.subheader("Earnings Prediction")
+    dates = [today + timedelta(days=i) for i in range(4)]
+    predictions = []
+    for d in dates:
+        pred = predict_earnings(df, d)
+        predictions.append(pred if pred is not None else 0)
+
+    pred_df = pd.DataFrame({
+        "Date": dates,
+        "Predicted Earnings": predictions
+    })
+
+    st.line_chart(pred_df.set_index("Date"))
+
+    # Example insight based on trend
+    if predictions[0] < predictions[-1]:
+        st.success("Good news! Your earnings trend is increasing over the next few days 📈")
+    else:
+        st.warning("Earnings may dip soon. Consider increasing your activity or adjusting your strategy.")

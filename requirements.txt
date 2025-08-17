@@ -10,3 +10,5 @@ plotly
 pytz
 firebase-admin
 scikit-learn
+xgboost
+

@@ -10,6 +10,7 @@ from ui_components import (
     display_metrics, display_ai_insights, display_analytics, 
     delete_entries_section, manage_incentives, tip_baiter_tracker
 )
+from ai_training import display_ai_training_interface
 from config import TARGET_DAILY
 
 # === CONFIG & SETUP ===
@@ -40,7 +41,7 @@ def main():
                 st.write(daily_notes)
         
         # Navigation tabs
-        tab1, tab2, tab3, tab4, tab5 = st.tabs(["Tracker", "Incentives", "Tip Baiters", "Analytics", "Settings"])
+        tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["Tracker", "Incentives", "Tip Baiters", "Analytics", "AI Training", "Settings"])
         
         with tab1:
             # Display current metrics
@@ -62,6 +63,9 @@ def main():
             display_analytics(user)
         
         with tab5:
+            display_ai_training_interface(user)
+        
+        with tab6:
             delete_entries_section(user)
         
         st.caption("🧠 AI-Powered Spark Tracker v3.0 | Data stays 100% yours.")

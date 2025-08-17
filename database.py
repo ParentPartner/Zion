@@ -7,6 +7,7 @@ from datetime import datetime, date, time, timedelta
 import easyocr
 import firebase_admin
 from firebase_admin import credentials, firestore
+from google.cloud.firestore import FieldFilter
 import numpy as np
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor
@@ -70,7 +71,7 @@ def add_entry_to_firestore(entry: Dict) -> None:
 
 def load_user_deliveries(username: str) -> pd.DataFrame:
     try:
-        docs = db.collection("deliveries").where("username", "==", username).stream()
+        docs = db.collection("deliveries").where(filter=FieldFilter("username", "==", username)).stream()
         data = [doc.to_dict() for doc in docs]
         return pd.DataFrame(data) if data else pd.DataFrame()
     except Exception as e:
@@ -86,7 +87,7 @@ def add_tip_baiter_to_firestore(entry: Dict) -> None:
 
 def load_user_tip_baiters(username: str) -> pd.DataFrame:
     try:
-        docs = db.collection("tip_baiters").where("username", "==", username).stream()
+        docs = db.collection("tip_baiters").where(filter=FieldFilter("username", "==", username)).stream()
         data = []
         for doc in docs:
             entry = doc.to_dict()

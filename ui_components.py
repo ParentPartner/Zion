@@ -40,7 +40,7 @@ def login_section() -> Optional[str]:
                 "logged_in": True,
                 "username": username
             })
-            st.experimental_rerun()
+            st.rerun()
         else:
             st.error("Invalid credentials")
     
@@ -76,7 +76,7 @@ def daily_checkin(username: str) -> bool:
                 "today_goal": TARGET_DAILY,
                 "today_notes": "Changed mind - decided to work"
             })
-            st.experimental_rerun()
+            st.rerun()
             
         return is_working
     
@@ -100,7 +100,7 @@ def daily_checkin(username: str) -> bool:
                 "goal": goal,
                 "notes": notes
             }
-            st.experimental_rerun()
+            st.rerun()
     else:
         if st.button("Take the day off"):
             update_user_data(username, {
@@ -114,7 +114,7 @@ def daily_checkin(username: str) -> bool:
                 "goal": 0,
                 "notes": "Day off"
             }
-            st.experimental_rerun()
+            st.rerun()
     
     st.stop()
     return False
@@ -222,7 +222,7 @@ def delivery_entry_form(username: str, today: date) -> None:
                     st.success(f"✅ Saved {order_type} at {aware_dt.strftime('%I:%M %p')} with ${bonus_amount:.2f} in bonuses ({incentive_names})!")
                 else:
                     st.success(f"✅ Saved {order_type} entry at {aware_dt.strftime('%I:%M %p')}!")
-                st.experimental_rerun()
+                st.rerun()
             except Exception as e:
                 st.error(f"Failed to save entry: {e}")
 
@@ -407,7 +407,7 @@ def manage_incentives(username: str) -> None:
                     current_incentives.append(new_incentive)
                     save_incentives(username, current_incentives)
                     st.success("Incentive saved!")
-                    st.experimental_rerun()
+                    st.rerun()
     
     st.subheader("📋 Your Active Incentives")
     if not current_incentives:
@@ -427,7 +427,7 @@ def manage_incentives(username: str) -> None:
                         del current_incentives[idx]
                         save_incentives(username, current_incentives)
                         st.success("Incentive removed!")
-                        st.experimental_rerun()
+                        st.rerun()
 
 # === TIP BAITER TRACKER ===
 def tip_baiter_tracker(username: str) -> None:
@@ -470,7 +470,7 @@ def tip_baiter_tracker(username: str) -> None:
                     }
                     add_tip_baiter_to_firestore(entry)
                     st.success("Tip baiter saved!")
-                    st.experimental_rerun()
+                    st.rerun()
     
     # Display and manage existing tip baiters
     st.subheader("📋 Your Tip Baiters")
@@ -545,7 +545,7 @@ def tip_baiter_tracker(username: str) -> None:
                                 if st.button("🗑️", key=f"del_tb_{row['id']}"):
                                     db.collection("tip_baiters").document(row["id"]).delete()
                                     st.success("Tip baiter removed!")
-                                    st.experimental_rerun()
+                                    st.rerun()
                             st.divider()
         else:
             st.info("No tip baiters match your filters")
@@ -743,7 +743,7 @@ def delete_entries_section(username: str) -> None:
                         for doc in docs:
                             db.collection("deliveries").document(doc.id).delete()
                             st.success("Entry deleted!")
-                            st.experimental_rerun()
+                            st.rerun()
                 st.divider()
     else:
         st.info("No entries found for this date")
